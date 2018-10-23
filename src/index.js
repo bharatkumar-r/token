@@ -7,7 +7,6 @@ import initializeDb from './db';
 import middleware from './middleware';
 import api from './api';
 import config from './config.json';
-import httpReq from './lib/httpReq';
 import constConfig from "./lib/constants";
 
 let app = express();
@@ -28,29 +27,17 @@ app.use(bodyParser.json({
 // connect to db
 initializeDb( db => {
 
-    let constants = constConfig({config});
-    let url = constants.fetchToken + config.commerceTools.projectKey;
-    let headers = {};
-    headers.Authorization = 'Basic ' + new Buffer(config.commerceTools.credentials.clientId + ':' + config.commerceTools.credentials.clientSecret).toString("base64");
-    
-    console.log('access token url... ', url);
-    httpReq
-        .httpPost(url, null, false, headers, false)
-        .then(function(results) {
+     // internal middleware
+     app.use(middleware({ config, db }));
 
-            config.commerceTools.access_token = results.access_token;
+     let constants = constConfig({config});
+     console.info('constants...',constants);
+     // api router
+     app.use('/api', api({ config, constants }));
 
-            // internal middleware
-            app.use(middleware({ config, db }));
-            
-            console.info('constants...',constants);
-            // api router
-            app.use('/api', api({ config, constants }));
-
-            app.server.listen(process.env.PORT || config.port, () => {
-                console.log(`Started on port ${app.server.address().port}`);
-            });
-        });
+     app.server.listen(process.env.PORT || config.port, () => {
+         console.log(`Started on port ${app.server.address().port}`);
+     });
 
 	
 });

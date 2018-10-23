@@ -1,21 +1,23 @@
-import { version } from '../../package.json';
 import { Router } from 'express';
-import carts from './carts';
+import httpReq from '../lib/httpReq';
  
 export default ({ config, constants }) => {
 
         let api = Router();
 
-        // mount the facets resource
-        api.use('/carts', carts({ config, constants }));
-
-        // perhaps expose some API metadata at the root
-        api.get('/', (req, res) => {
-            res.json({ version });
-        });
-
         api.get('/token', (req, res) => {
-
+            
+            let url = constants.fetchToken + config.commerceTools.projectKey;
+            let headers = {};
+            headers.Authorization = 'Basic ' + new Buffer(config.commerceTools.credentials.clientId + ':' + config.commerceTools.credentials.clientSecret).toString("base64");
+            
+            console.log('access token url... ', url);
+            httpReq
+                .httpPost(url, null, false, headers, false)
+                .then(function(results) {
+                    console.info('token results.....',results);
+                    res.json(results);
+                });
         });
 
         return api;
